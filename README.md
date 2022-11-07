@@ -1,8 +1,8 @@
-# Recitation 7: static analysis and continuous integration
+# Recitation 8: static analysis and continuous integration
 Static and dynamic analysis tools help you keep the codebase healthy. In this recitation, we will learn how to set up these tools in CI (GitHub Actions). 
 # Step 1: Setup your sample Python repo
 
-First, go to [this template repo](https://github.com/CMU-313/fall-2022-recitation-7-analysis-ci) and [use it](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template) to create your own repo. The repo is very similar to the HW4 repo, except that it comes with a failing test. 
+First, go to [this template repo](https://github.com/CMU-313/fall-2022-recitation-8-analysis-ci) and [use it](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template) to create your own repo. The repo is very similar to the HW4 repo, except that it comes with a failing test. 
 
 You already learned that it's a big no-no to push directly to `main`. We can actually enforce this using [branch protect rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/managing-a-branch-protection-rule). Read the docs to understand what they are, and set the following rules:
 
@@ -11,7 +11,7 @@ You already learned that it's a big no-no to push directly to `main`. We can act
 
 Your setting should look like this:
 
-![](assets/2022-11-07-11-03-50.png)
+![](assets/images/branch-protection.png)
 
 # Step 2: Fix the broken CI
 
@@ -75,4 +75,4 @@ The coverage job doesn't really add much to the workflow now since it doesn't fa
 ```
 
 If set up, the job will automatically comment on PRs with the coverage info:
-![](assets/2022-11-07-11-31-09.png)
+![](assets/images/coverage-report.png)
