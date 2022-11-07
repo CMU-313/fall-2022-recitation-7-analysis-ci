@@ -1,105 +1,78 @@
-# HW4 Starter Code and Instructions
+# Recitation 7: static analysis and continuous integration
+Static and dynamic analysis tools help you keep the codebase healthy. In this recitation, we will learn how to set up these tools in CI (GitHub Actions). 
+# Step 1: Setup your sample Python repo
 
-Please consult the [homework assignment](https://cmu-313.github.io//assignments/hw4) for additional context and instructions for this code.
+First, go to [this template repo](https://github.com/CMU-313/fall-2022-recitation-7-analysis-ci) and [use it](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template) to create your own repo. The repo is very similar to the HW4 repo, except that it comes with a failing test. 
 
-## pipenv
+You already learned that it's a big no-no to push directly to `main`. We can actually enforce this using [branch protect rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/managing-a-branch-protection-rule). Read the docs to understand what they are, and set the following rules:
 
-[pipenv](https://pipenv.pypa.io/en/latest) is a packaging tool for Python that solves some common problems associated with the typical workflow using pip, virtualenv, and the good old requirements.txt.
+* Requires a pull request before merging to `main`: just check the box
+* Requires tests to pass before merging to `main`: search for the job name in the required checks (i.e. `test` in this case)
 
-### Installation
+Your setting should look like this:
 
-#### Prereqs
+![](assets/2022-11-07-11-03-50.png)
 
-- The version of Python you and your team will be using (version greater than 3.8)
-- pip package manager is updated to latest version
-- For additional resources, check out [this link](https://pipenv-fork.readthedocs.io/en/latest/install.html#installing-pipenv)
+# Step 2: Fix the broken CI
 
-#### Mac OS
+The ❌ really shouldn't have been there in the first place if I had these rules enabled. Now let's fix it. Branch off from `main` and create a PR to fix the broken CI. 
 
-To install pipenv from the command line, execute the following:
+The fix is simple: add an `if` in `app.fibonacci` to return `0` if `position == 0`.
 
-```terminal
-sudo -H pip install -U pipenv
+The `test` job should pass on your PR. Click "Squash and merge"* to merge after the status checks pass.
+
+*: It's just a lot cleaner than the default merge.
+
+# Step 3: Make your code pretty 
+
+Different tab sizes driving you crazy? Let's use a tool to standardize them all. A code formatter, a static analysis tool, helps one identify and fix formatting issues in the codebase. Let's use [black](https://github.com/psf/black) as an example. 
+
+First, create another branch for setting up a code formatter.
+
+Then, install it locally and try running it.
+* `pipenv install --dev black`: `black` is only a _development dependency_. Your package doesn't actually use it.
+* `pipenv run black . --check`: runs `black` in the current directory. `--check` dry-runs `black` and don't alter any files.
+  * Observe some files on the list.
+* `pipenv run black .`: this will actually change the files.
+  * Run `git diff` to observe the file changes.
+
+Using CI, we can enforce formatting requirements using the same GH Actions + status checks. For popular tools, someone has done it before, and you can reuse their workflow. 
+
+* Go to [this existing `black` Actions on GH Marketplace](https://github.com/marketplace/actions/run-black-formatter)
+* Click "Use lastest version" to see what needs to be added to `.github/workflows/main.yml`
+* Add another "job" to the `.yml` file called `format`
+* Push your formatted files to the branch and observe `format` passes.
+* Squash and merge the PR
+
+# Step 4: Add test coverage to the CI workflow
+
+Finally, you can also do some dynamic analysis. Since we are already using `pytest`, let's use [`pytest-cov`](https://pytest-cov.readthedocs.io/en/latest/), a plugin that reports test coverage.
+
+First, install and try to use it locally:
+
+* Create another branch
+* `pipenv install --dev pytest-cov`: install `pytest-cov` locally 
+* `pipenv run pytest --cov=app`: runs `pytest` with coverage report
+
+Now, let's add another job in the workflow for reporting coverage:
+
+* Copy the steps before `pytest` from the `test` workflow 
+* Now, run `pipenv run pytest --cov=app` to report coverage
+* Push and observe the new check running
+
+## Bonus: report coverage in PRs
+
+The coverage job doesn't really add much to the workflow now since it doesn't fail. Without being too strict about coverage, we can at least display the coverage status in the PR. 
+
+[Somebody has already done it](https://github.com/marketplace/actions/pytest-coverage-commentator), so we can use it in our repo too. Here are the lines that matter:
+
+```yml
+- name: Build coverage file
+  run: |
+    pytest --cache-clear --cov=app test/ > pytest-coverage.txt
+- name: Comment coverage
+  uses: coroo/pytest-coverage-commentator@v1.0.2
 ```
 
-#### Windows OS
-
-The same instructions for Mac OS **should** work for windows, but if it doesn't, follow the instructions [here](https://www.pythontutorial.net/python-basics/install-pipenv-windows).
-
-### Usage
-
-#### Downloading Packages
-
-The repository contains `Pipfile` that declares which packages are necessary to run the `model_build.ipnyb`.
-To install packages declared by the Pipfile, run `pipenv install` in the command line from the root directory.
-
-You might want to use additional packages throughout the assignment.
-To do so, run `pipenv install [PACKAGE_NAME]`, as you would install python packages using pip.
-This should also update `Pipfile` and add the downloaded package under `[packages]`.
-Note that `Pipfile.lock` will also be updated with the specific versions of the dependencies that were installed.
-Any changes to `Pipfile.lock` should also be committed to your Git repository to ensure that all of your team is using the same dependency versions.
-
-#### Virtual Environment
-
-Working in teams can be a hassle since different team members might be using different versions of Python.
-To avoid this issue, you can create a python virtual environment, so you and your team will be working with the same version of Python and PyPi packages.
-Run `pipenv shell` in your command line to activate this project's virtual environment.
-If you have more than one version of Python installed on your machine, you can use pipenv's `--python` option to specify which version of Python should be used to create the virtual environment.
-If you want to learn more about virtual environments, read [this article](https://docs.python-guide.org/dev/virtualenvs/#using-installed-packages).
-You can also specify which version of python you and your team should use under the `[requires]` section in `Pipfile`.
-
-## Jupyter Notebook
-
-You should run your notebook in the virtual environment from pipenv.
-To do, you should run the following command from the root of your repository:
-
-```terminal
-pipenv run jupyter notebook
-```
-
-## API Endpoints
-
-You should also use pipenv to run your Flask API server.
-To do so, execute the following commands from the `app` directory in the pip venv shell.
-
-
-Set an environment variable for FLASK_APP.
-For Mac and Linux:
-```terminal
-export FLASK_APP=app.py
-```
-
-For Windows:
-```terminal
-set FLASK_APP=app
-```
-
-To run:
-```terminal
-pipenv run flask run
-```
-
-Or if you're in the pipenv shell, run:
-```terminal
-flask run
-```
-
-You can alter the port number that is used by the Flask server by changing the following line in `app/app.py`:
-
-```python
-app.run(host="0.0.0.0", debug=True, port=80)
-```
-
-## Testing
-
-To run tests, execute the following command from the `app` directory:
-
-```terminal
-pytest
-```
-
-If you're not in the Pipenv shell, then execute the following command from the `app` directory:
-
-```terminal
-pipenv run pytest
-```
+If set up, the job will automatically comment on PRs with the coverage info:
+![](assets/2022-11-07-11-31-09.png)
